@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text-to-Speech PDF Reader</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f0f4f8;
+      color: #333;
+    }
+
+    header {
+      background-color: #2c3e50;
+      color: white;
+      text-align: center;
+      padding: 15px 0;
+    }
+
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 20px;
+    }
+
+    .file-upload,
+    .text-area {
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .file-upload input,
+    .text-area textarea {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 2px solid #2c3e50;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .file-upload button,
+    .control-button {
+      padding: 10px 20px;
+      background-color: #2c3e50;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+
+    .file-upload button:hover,
+    .control-button:hover {
+      background-color: #34495e;
+    }
+
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .voice-select {
+      padding: 10px;
+      font-size: 16px;
+      border: 2px solid #2c3e50;
+      border-radius: 8px;
+    }
+
+    .pdf-preview-container {
+      width: 100%;
+      max-width: 50%;
+      margin-left: 20px;
+      background-color: #ffffff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      height: 500px;
+      overflow-y: scroll;
+    }
+
+    .pdf-preview-container h3,
+    .text-preview-container h3 {
+      text-align: center;
+      color: #2c3e50;
+    }
+
+    .pdf-preview-container p {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #555;
+    }
+
+    .text-preview-container {
+      width: 100%;
+      max-width: 50%;
+      margin-left: 20px;
+      background-color: #ffffff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      height: 500px;
+      overflow-y: scroll;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+
+      .pdf-preview-container,
+      .text-preview-container {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Text-to-Speech PDF Reader</h1>
+  </header>
+
+  <div class="container">
+
+    <!-- File upload and text input section -->
+    <div class="file-upload">
+      <input type="file" id="pdfFile" accept="application/pdf">
+      <button onclick="readPDF()">Read PDF</button>
+    </div>
+
+    <div class="text-area">
+      <textarea id="textInput" placeholder="Paste your text here"></textarea>
+      <button onclick="readTextFromInput()">Read Text</button>
+    </div>
+
+    <!-- PDF Preview and Text Preview Section -->
+    <div class="pdf-preview-container" id="pdfPreview" contenteditable="true">
+      <h3>PDF Preview</h3>
+      <p id="pdfContentPreview">No PDF uploaded yet.</p>
+    </div>
+
+    <div class="text-preview-container" id="textPreview" contenteditable="true">
+      <h3>Text Preview</h3>
+      <p id="copiedTextPreview">No text copied yet.</p>
+    </div>
+
+  </div>
+
+  <div class="controls">
+    <select class="voice-select" id="voiceSelect">
+      <!-- Voices will be dynamically populated -->
+    </select>
+
+    <button class="control-button" onclick="pauseSpeech()">Pause</button>
+    <button class="control-button" onclick="resumeSpeech()">Resume</button>
+    <button class="control-button" onclick="startReadingFromSelection()">Start Reading From Selection</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+  <script>
+    let speechSynthesisInstance = window.speechSynthesis;
+    let speechInstance;
+
+    // Load available voices
+    let voices = [];
+
+    function loadVoices() {
+      voices = speechSynthesisInstance.getVoices();
+      const voiceSelect = document.getElementById("voiceSelect");
+      voiceSelect.innerHTML = '';
+      voices.forEach(voice => {
+        const option = document.createElement("option");
+        option.value = voice.lang;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        voiceSelect.appendChild(option);
+      });
+    }
+
+    // Set the selected voice
+    function getSelectedVoice() {
+      const selectedLang = document.getElementById("voiceSelect").value;
+      return voices.find(voice => voice.lang === selectedLang) || voices[0];
+    }
+
+    // Read text aloud
+    function readTextAloud(text) {
+      if (speechSynthesisInstance.speaking) {
+        speechSynthesisInstance.cancel();
+      }
+      const speech = new SpeechSynthesisUtterance();
+      speech.text = text;
+      speech.voice = getSelectedVoice();
+      speechInstance = speechSynthesisInstance.speak(speech);
+    }
+
+    // Handle reading text from the input area
+    function readTextFromInput() {
+      const text = document.getElementById('textInput').value;
+      document.getElementById('copiedTextPreview').textContent = text;
+      readTextAloud(text);
+    }
+
+    // Handle reading PDF content
+    function readPDF() {
+      const file = document.getElementById('pdfFile').files[0];
+      if (!file) {
+        alert('Please upload a PDF file first.');
+        return;
+      }
+
+      const fileReader = new FileReader();
+      fileReader.onload = function(e) {
+        const pdfData = e.target.result;
+        pdfjsLib.getDocument({data: pdfData}).promise.then(function(pdf) {
+          let textContent = '';
+          let pagesProcessed = 0;
+          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            pdf.getPage(pageNum).then(function(page) {
+              page.getTextContent().then(function(text) {
+                textContent += text.items.map(item => item.str).join(' ') + ' ';
+                pagesProcessed++;
+                if (pagesProcessed === pdf.numPages) {
+                  document.getElementById('pdfContentPreview').textContent = textContent;
+                  readTextAloud(textContent);
+                }
+              });
+            });
+          }
+        });
+      };
+      fileReader.readAsArrayBuffer(file);
+    }
+
+    // Pause speech
+    function pauseSpeech() {
+      if (speechSynthesisInstance.speaking) {
+        speechSynthesisInstance.pause();
+      }
+    }
+
+    // Resume speech
+    function resumeSpeech() {
+      if (speechSynthesisInstance.paused) {
+        speechSynthesisInstance.resume();
+      }
+    }
+
+    // Start reading from selected text
+    function startReadingFromSelection() {
+      let selectedText = '';
+      if (window.getSelection) {
+        selectedText = window.getSelection().toString();
+      } else if (document.selection) {
+        selectedText = document.selection.createRange().text;
+      }
+      
+      if (selectedText.trim()) {
+        readTextAloud(selectedText);
+      } else {
+        alert('Please select some text to start reading.');
+      }
+    }
+
+    // Initialize voices when available
+    speechSynthesisInstance.onvoiceschanged = loadVoices;
+
+    // Initial voice load
+    loadVoices();
+
+  </script>
+
+</body>
+</html>
