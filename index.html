@@ -3,281 +3,284 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Text-to-Speech PDF Reader</title>
+  <title>PDF and Text Reader</title>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Open Sans', sans-serif;
+      background: #97f675;
+      color: #10120f;
       margin: 0;
       padding: 0;
-      background: #f0f4f8;
-      color: #333;
-    }
-
-    header {
-      background-color: #2c3e50;
-      color: white;
-      text-align: center;
-      padding: 15px 0;
     }
 
     .container {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
+      max-width: 900px;
+      margin: 20px auto;
       padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
-    .file-upload,
-    .text-area {
-      width: 100%;
+    h1 {
+      text-align: center;
+      color: #54943d;
+      font-weight: bold;
+    }
+
+    .controls, .file-input, .text-input, .pdf-page-selector, .voice-selector {
       margin-bottom: 20px;
     }
 
-    .file-upload input,
-    .text-area textarea {
+    .controls button, .voice-selector select, .pdf-page-selector select {
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      background: #54943d;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .controls button:hover, .voice-selector select:hover, .pdf-page-selector select:hover {
+      background: #4a8b32;
+    }
+
+    .file-input label, .text-input label, .voice-selector label, .pdf-page-selector label {
+      font-weight: bold;
+    }
+
+    .text-input textarea {
       width: 100%;
       padding: 10px;
-      font-size: 16px;
-      border: 2px solid #2c3e50;
-      border-radius: 8px;
-      margin-bottom: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
     }
 
-    .file-upload button,
-    .control-button {
-      padding: 10px 20px;
-      background-color: #2c3e50;
-      color: white;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-right: 10px;
-    }
-
-    .file-upload button:hover,
-    .control-button:hover {
-      background-color: #34495e;
-    }
-
-    .controls {
-      margin-top: 20px;
+    .pdf-page-selector, .voice-selector {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
     }
 
-    .voice-select {
-      padding: 10px;
-      font-size: 16px;
-      border: 2px solid #2c3e50;
-      border-radius: 8px;
+    .content {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
     }
 
-    .pdf-preview-container {
-      width: 100%;
-      max-width: 50%;
-      margin-left: 20px;
-      background-color: #ffffff;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      height: 500px;
-      overflow-y: scroll;
+    .left-side {
+      width: 30%;
+      padding-right: 20px;
+      overflow-y: auto;
     }
 
-    .pdf-preview-container h3,
-    .text-preview-container h3 {
-      text-align: center;
-      color: #2c3e50;
+    .right-side {
+      width: 65%;
     }
 
-    .pdf-preview-container p {
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      font-size: 14px;
-      line-height: 1.6;
-      color: #555;
+    .container:after {
+      content: "";
+      display: block;
+      clear: both;
     }
 
-    .text-preview-container {
-      width: 100%;
-      max-width: 50%;
-      margin-left: 20px;
-      background-color: #ffffff;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      height: 500px;
-      overflow-y: scroll;
-    }
-
-    @media (max-width: 768px) {
-      .container {
-        flex-direction: column;
-      }
-
-      .pdf-preview-container,
-      .text-preview-container {
-        max-width: 100%;
-      }
+    .highlighted {
+      background-color: yellow;
+      transition: background-color 0.2s ease;
     }
   </style>
 </head>
 <body>
-
-  <header>
-    <h1>Text-to-Speech PDF Reader</h1>
-  </header>
-
   <div class="container">
+    <h1>PDF and Text Reader</h1>
 
-    <!-- File upload and text input section -->
-    <div class="file-upload">
-      <input type="file" id="pdfFile" accept="application/pdf">
-      <button onclick="readPDF()">Read PDF</button>
+    <div class="file-input">
+      <label for="pdfInput">Upload PDF:</label>
+      <input type="file" id="pdfInput" accept="application/pdf">
     </div>
 
-    <div class="text-area">
-      <textarea id="textInput" placeholder="Paste your text here"></textarea>
-      <button onclick="readTextFromInput()">Read Text</button>
+    <div class="content">
+      <div class="left-side">
+        <h4>PDF Preview:</h4>
+        <div id="pdfPreview" class="preview">Select PDF to preview</div>
+      </div>
+
+      <div class="right-side">
+        <div class="text-input">
+          <label for="textInput">Enter Text:</label>
+          <textarea id="textInput" rows="5" placeholder="Paste your text here"></textarea>
+        </div>
+      </div>
     </div>
 
-    <!-- PDF Preview and Text Preview Section -->
-    <div class="pdf-preview-container" id="pdfPreview" contenteditable="true">
-      <h3>PDF Preview</h3>
-      <p id="pdfContentPreview">No PDF uploaded yet.</p>
+    <div class="controls">
+      <button id="playButton">Play</button>
+      <button id="pauseButton">Pause</button>
+      <button id="resumeButton">Resume</button>
+      <button id="stopButton">Stop</button>
     </div>
 
-    <div class="text-preview-container" id="textPreview" contenteditable="true">
-      <h3>Text Preview</h3>
-      <p id="copiedTextPreview">No text copied yet.</p>
+    <div class="pdf-page-selector">
+      <div>
+        <label for="pageSelect">Select Page:</label>
+        <select id="pageSelect">
+          <option value="1">Page 1</option>
+        </select>
+      </div>
+      <div class="voice-selector">
+        <label for="voiceSelect">Select Voice:</label>
+        <select id="voiceSelect"></select>
+      </div>
     </div>
-
   </div>
 
-  <div class="controls">
-    <select class="voice-select" id="voiceSelect">
-      <!-- Voices will be dynamically populated -->
-    </select>
-
-    <button class="control-button" onclick="pauseSpeech()">Pause</button>
-    <button class="control-button" onclick="resumeSpeech()">Resume</button>
-    <button class="control-button" onclick="startReadingFromSelection()">Start Reading From Selection</button>
-  </div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.15.349/pdf.min.js"></script>
   <script>
-    let speechSynthesisInstance = window.speechSynthesis;
-    let speechInstance;
+    document.addEventListener("DOMContentLoaded", () => {
+      const synth = window.speechSynthesis;
+      let voices = [];
+      let currentText = "";
+      let isPaused = false;
+      let pdfPages = [];
+      let currentPage = 1;
+      let currentUtterance = null;
 
-    // Load available voices
-    let voices = [];
-
-    function loadVoices() {
-      voices = speechSynthesisInstance.getVoices();
+      const playButton = document.getElementById("playButton");
+      const pauseButton = document.getElementById("pauseButton");
+      const resumeButton = document.getElementById("resumeButton");
+      const stopButton = document.getElementById("stopButton");
+      const pdfInput = document.getElementById("pdfInput");
+      const textInput = document.getElementById("textInput");
+      const pageSelect = document.getElementById("pageSelect");
       const voiceSelect = document.getElementById("voiceSelect");
-      voiceSelect.innerHTML = '';
-      voices.forEach(voice => {
-        const option = document.createElement("option");
-        option.value = voice.lang;
-        option.textContent = `${voice.name} (${voice.lang})`;
-        voiceSelect.appendChild(option);
-      });
-    }
+      const pdfPreview = document.getElementById("pdfPreview");
+      const previewArea = document.getElementById("pdfPreview");
 
-    // Set the selected voice
-    function getSelectedVoice() {
-      const selectedLang = document.getElementById("voiceSelect").value;
-      return voices.find(voice => voice.lang === selectedLang) || voices[0];
-    }
+      let highlightTimeout = null;
 
-    // Read text aloud
-    function readTextAloud(text) {
-      if (speechSynthesisInstance.speaking) {
-        speechSynthesisInstance.cancel();
-      }
-      const speech = new SpeechSynthesisUtterance();
-      speech.text = text;
-      speech.voice = getSelectedVoice();
-      speechInstance = speechSynthesisInstance.speak(speech);
-    }
-
-    // Handle reading text from the input area
-    function readTextFromInput() {
-      const text = document.getElementById('textInput').value;
-      document.getElementById('copiedTextPreview').textContent = text;
-      readTextAloud(text);
-    }
-
-    // Handle reading PDF content
-    function readPDF() {
-      const file = document.getElementById('pdfFile').files[0];
-      if (!file) {
-        alert('Please upload a PDF file first.');
-        return;
-      }
-
-      const fileReader = new FileReader();
-      fileReader.onload = function(e) {
-        const pdfData = e.target.result;
-        pdfjsLib.getDocument({data: pdfData}).promise.then(function(pdf) {
-          let textContent = '';
-          let pagesProcessed = 0;
-          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-            pdf.getPage(pageNum).then(function(page) {
-              page.getTextContent().then(function(text) {
-                textContent += text.items.map(item => item.str).join(' ') + ' ';
-                pagesProcessed++;
-                if (pagesProcessed === pdf.numPages) {
-                  document.getElementById('pdfContentPreview').textContent = textContent;
-                  readTextAloud(textContent);
-                }
-              });
-            });
-          }
-        });
+      const loadVoices = () => {
+        voices = synth.getVoices();
+        voiceSelect.innerHTML = voices.map((voice) => `<option value="${voice.name}">${voice.name}</option>`).join("");
+        voiceSelect.selectedIndex = 0; // Default to first voice
       };
-      fileReader.readAsArrayBuffer(file);
-    }
 
-    // Pause speech
-    function pauseSpeech() {
-      if (speechSynthesisInstance.speaking) {
-        speechSynthesisInstance.pause();
+      const renderPdfPage = (pageNumber) => {
+        previewArea.textContent = pdfPages[pageNumber - 1] || "Page not available";
+      };
+
+      const handlePdfUpload = (file) => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const pdfData = new Uint8Array(e.target.result);
+          const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+
+          pdfPages = [];
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const text = textContent.items.map((item) => item.str).join(" ");
+            pdfPages.push(text);
+          }
+
+          pageSelect.innerHTML = pdfPages
+            .map((_, index) => `<option value="${index + 1}">Page ${index + 1}</option>`)
+            .join("");
+          currentPage = 1;
+          renderPdfPage(currentPage);
+        };
+        reader.readAsArrayBuffer(file);
+      };
+
+      const readText = (text) => {
+        if (synth.speaking) synth.cancel();
+        currentText = text;
+        const utterance = new SpeechSynthesisUtterance(currentText);
+
+        // Set speech rate to slow down the reading
+        utterance.rate = 0.8; // Adjust this rate (0.1 to 2.0) for slower or faster speed
+
+        utterance.voice = voices.find(voice => voice.name === voiceSelect.value); // Selected voice
+        utterance.onstart = () => {
+          highlightText(currentText);
+        };
+        utterance.onend = () => {
+          isPaused = false;
+          currentPage += 1;
+          if (currentPage <= pdfPages.length) {
+            renderPdfPage(currentPage);
+            readText(pdfPages[currentPage - 1]);
+          }
+        };
+
+        synth.speak(utterance);
+        currentUtterance = utterance;
+      };
+
+      const highlightText = (text) => {
+        const words = text.split(" ");
+        let startIdx = 0;
+        const highlightWord = () => {
+          if (startIdx < words.length) {
+            // Clear previous highlight
+            previewArea.innerHTML = words.slice(0, startIdx).join(" ") + 
+                                   `<span class="highlighted">${words[startIdx]}</span>` +
+                                   words.slice(startIdx + 1).join(" ");
+            startIdx++;
+            highlightTimeout = setTimeout(highlightWord, 500); // Delay between words (adjust for better pacing)
+          } else {
+            clearTimeout(highlightTimeout);
+          }
+        };
+        highlightWord();
+      };
+
+      playButton.addEventListener("click", () => {
+        const text = pdfPages.length > 0 ? pdfPages[currentPage - 1] : textInput.value.trim();
+        if (text) readText(text);
+      });
+
+      pauseButton.addEventListener("click", () => {
+        if (synth.speaking) {
+          synth.pause();
+          isPaused = true;
+        }
+      });
+
+      resumeButton.addEventListener("click", () => {
+        if (isPaused) {
+          synth.resume();
+          isPaused = false;
+        }
+      });
+
+      stopButton.addEventListener("click", () => {
+        if (synth.speaking) {
+          synth.cancel();
+          clearTimeout(highlightTimeout);
+        }
+      });
+
+      pdfInput.addEventListener("change", (e) => {
+        handlePdfUpload(e.target.files[0]);
+      });
+
+      textInput.addEventListener("input", () => {
+        currentText = textInput.value;
+      });
+
+      pageSelect.addEventListener("change", () => {
+        currentPage = parseInt(pageSelect.value);
+        renderPdfPage(currentPage);
+      });
+
+      loadVoices();
+      if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = loadVoices;
       }
-    }
-
-    // Resume speech
-    function resumeSpeech() {
-      if (speechSynthesisInstance.paused) {
-        speechSynthesisInstance.resume();
-      }
-    }
-
-    // Start reading from selected text
-    function startReadingFromSelection() {
-      let selectedText = '';
-      if (window.getSelection) {
-        selectedText = window.getSelection().toString();
-      } else if (document.selection) {
-        selectedText = document.selection.createRange().text;
-      }
-      
-      if (selectedText.trim()) {
-        readTextAloud(selectedText);
-      } else {
-        alert('Please select some text to start reading.');
-      }
-    }
-
-    // Initialize voices when available
-    speechSynthesisInstance.onvoiceschanged = loadVoices;
-
-    // Initial voice load
-    loadVoices();
-
+    });
   </script>
-
 </body>
 </html>
